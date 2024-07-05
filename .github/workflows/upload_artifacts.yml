@@ -1,0 +1,50 @@
+name: CI for Artifact Upload
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  ARTIFACT_FILE_NAME: 10.10.10.10
+  ARTIFACT_TYPE: ga
+  IS_MARKED_LATEST_DLL: 'false'
+  D42_PWD: ${{ secrets.D42_LAB_PASSWORD }} # This should be set in GitHub Secrets
+
+jobs:
+  upload-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Generate env file
+      run: |
+        echo "Generating env file..."
+        export HOME=/home/runner
+
+    - name: Upload artifacts
+      run: |
+        echo "Uploading artifacts..."
+      env:
+        D42_PWD: ${{ secrets.D42_LAB_PASSWORD }}
+
+    - name: Docker Prune
+      run: |
+        sudo chown -R $USER:$USER $GITHUB_WORKSPACE
+        docker stop $(docker ps -aq) || true
+        docker system prune -a -f
+
+    - name: Notification on job failure
+      if: failure()
+      run: echo "Sending failure notification..."
+      # Here you can add actual notification actions such as sending an email or slack message
+
+  # Define other jobs if needed
+
+permissions:
+  contents: read
+  issues: write
