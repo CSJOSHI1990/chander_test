@@ -6,11 +6,21 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  ARTIFACT_FILE_NAME: 10.10.10.10
-  ARTIFACT_TYPE: ga
-  IS_MARKED_LATEST_DLL: 'false'
-  D42_PWD: ${{ secrets.D42_LAB_PASSWORD }} # This should be set in GitHub Secrets
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_file_name:
+        description: 'Artifact File Name'
+        required: true
+        default: '10.10.10.10'
+      artifact_type:
+        description: 'Artifact Type'
+        required: true
+        default: 'ga'
+      is_marked_latest_dll:
+        description: 'Is Marked Latest DLL'
+        required: true
+        default: 'false'
 
 jobs:
   upload-artifacts:
@@ -28,9 +38,13 @@ jobs:
 
     - name: Upload artifacts
       run: |
-        echo "Uploading artifacts..."
+        echo "Uploading artifacts: $ARTIFACT_FILE_NAME, type: $ARTIFACT_TYPE, latest: $IS_MARKED_LATEST_DLL"
       env:
-        D42_PWD: ${{ secrets.D42_LAB_PASSWORD }}
+        D42_PWD: "abc123!@#"
+        ARTIFACT_FILE_NAME: ${{ github.event.inputs.artifact_file_name }}
+        ARTIFACT_TYPE: ${{ github.event.inputs.artifact_type }}
+        IS_MARKED_LATEST_DLL: ${{ github.event.inputs.is_marked_latest_dll }}
+
 
     - name: Docker Prune
       run: |
