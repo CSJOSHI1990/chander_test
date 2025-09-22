@@ -1,64 +1,77 @@
-name: CI for Artifact Upload
+name: SQL Deployment
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
-
-on:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   workflow_dispatch:
     inputs:
-      artifact_file_name:
-        description: 'Artifact File Name'
+      env:
+        description: "Environment (e.g., US01)"
         required: true
-        default: '10.10.10.10'
-      artifact_type:
-        description: 'Artifact Type'
+        default: "US01"
+      operation:
+        description: "Operation to perform (create|destroy)"
         required: true
-        default: 'ga'
-      is_marked_latest_dll:
-        description: 'Is Marked Latest DLL'
-        required: true
-        default: 'false'
+        type: choice
+        options:
+          - create
+          - destroy
+      server:
+        description: "Target server (leave empty for all)"
+        required: false
+        default: ""
+  schedule:
+    # Friday 9 PM EST -> destroy
+    - cron: "0 2 * * 6"   # 2 AM UTC = 9 PM EST Friday
+    # Monday 1 AM EST -> create
+    - cron: "0 6 * * 1"   # 6 AM UTC = 1 AM EST Monday
+
+env:
+  DEFAULT_SERVERS: '["US01SQL01","US01SQL03"]'
 
 jobs:
-  upload-artifacts:
+  setup:
     runs-on: ubuntu-latest
+    outputs:
+      servers: ${{ steps.set-servers.outputs.servers }}
+      operation: ${{ steps.set-op.outputs.op }}
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
+      - name: Decide servers
+        id: set-servers
+        run: |
+          if [ "${{ github.event_name }}" == "schedule" ]; then
+            echo "servers=${DEFAULT_SERVERS}" >> $GITHUB_OUTPUT
+          else
+            if [ -z "${{ github.event.inputs.server }}" ]; then
+              echo "servers=${DEFAULT_SERVERS}" >> $GITHUB_OUTPUT
+            else
+              echo "servers=[\"${{ github.event.inputs.server }}\"]" >> $GITHUB_OUTPUT
+            fi
+          fi
 
-    - name: Generate env file
-      run: |
-        echo "Generating env file..."
-        export HOME=/home/runner
+      - name: Decide operation
+        id: set-op
+        run: |
+          if [ "${{ github.event_name }}" == "schedule" ]; then
+            if [ "${{ github.event.schedule }}" == "0 2 * * 6" ]; then
+              echo "op=destroy" >> $GITHUB_OUTPUT
+            else
+              echo "op=create" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "op=${{ github.event.inputs.operation }}" >> $GITHUB_OUTPUT
 
-    - name: Upload artifacts
-      run: |
-        echo "Uploading artifacts: $ARTIFACT_FILE_NAME, type: $ARTIFACT_TYPE, latest: $IS_MARKED_LATEST_DLL"
-      env:
-        D42_PWD: "abc123!@#"
-        ARTIFACT_FILE_NAME: ${{ github.event.inputs.artifact_file_name }}
-        ARTIFACT_TYPE: ${{ github.event.inputs.artifact_type }}
-        IS_MARKED_LATEST_DLL: ${{ github.event.inputs.is_marked_latest_dll }}
+  per-server:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        server: ${{ fromJson(needs.setup.outputs.servers) }}
 
-
-    - name: Docker Prune
-      run: |
-        sudo chown -R $USER:$USER $GITHUB_WORKSPACE
-        docker stop $(docker ps -aq) || true
-        docker system prune -a -f
-
-    - name: Notification on job failure
-      if: failure()
-      run: echo "Sending failure notification..."
-      # Here you can add actual notification actions such as sending an email or slack message
-
-  # Define other jobs if needed
-
-permissions:
-  contents: read
-  issues: write
+    steps:
+      - name: Print deployment command
+        run: |
+          echo "deploy ${{ needs.setup.outputs.operation }} SQL-${{ matrix.server }} -S ${{ github.event.inputs.env || 'US01' }}"
