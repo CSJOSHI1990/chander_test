@@ -33,6 +33,7 @@ on:
 
 env:
   DEFAULT_SERVERS: '["US01SQL01","US01SQL03"]'
+  ENVIRONMENT: "US01"   # 🔒 fixed environment (not user editable)
 
 jobs:
   setup:
@@ -41,6 +42,18 @@ jobs:
       servers: ${{ steps.set-servers.outputs.servers }}
       operation: ${{ steps.set-op.outputs.op }}
     steps:
+      - name: Validate server against environment
+        run: |
+          if [ -n "${{ github.event.inputs.server }}" ]; then
+            server_prefix="${{ github.event.inputs.server }}" 
+            server_prefix="${server_prefix:0:4}"
+            env_prefix="${ENVIRONMENT:0:4}"
+            if [ "$server_prefix" != "$env_prefix" ]; then
+              echo "❌ Server - ${{ github.event.inputs.server }} is not supported for the $ENVIRONMENT environment"
+              exit 1
+            fi
+          fi
+          
       - name: Decide servers
         id: set-servers
         run: |
@@ -79,4 +92,4 @@ jobs:
       - name: Print deployment command
         if: ${{ github.event_name != 'push' }}   # ⛔ skip on push to main
         run: |
-          echo "deploy ${{ needs.setup.outputs.operation }} SQL-${{ matrix.server }} -S ${{ github.event.inputs.env || 'US01' }}"
+          echo "deploy ${{ needs.setup.outputs.operation }} SQL-${{ matrix.server }} -S $ENVIRONMENT"
