@@ -8,8 +8,6 @@ run-name: >
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
     inputs:
       env:
@@ -79,5 +77,6 @@ jobs:
 
     steps:
       - name: Print deployment command
+        if: ${{ github.event_name != 'push' }}   # ⛔ skip on push to main
         run: |
           echo "deploy ${{ needs.setup.outputs.operation }} SQL-${{ matrix.server }} -S ${{ github.event.inputs.env || 'US01' }}"
