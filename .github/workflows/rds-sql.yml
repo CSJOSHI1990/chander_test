@@ -10,10 +10,6 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
     inputs:
-      env:
-        description: "Environment (e.g., US01)"
-        required: true
-        default: "US01"
       operation:
         description: "Operation to perform (create|destroy)"
         required: true
@@ -30,6 +26,9 @@ on:
     - cron: "0 2 * * 6"   # 2 AM UTC = 9 PM EST Friday
     # Monday 1 AM EST -> create
     - cron: "0 6 * * 1"   # 6 AM UTC = 1 AM EST Monday
+    # Test run at 3:00 PM IST daily
+    - cron: "30 9 * * *"
+
 
 env:
   DEFAULT_SERVERS: '["US01SQL01","US01SQL03"]'
