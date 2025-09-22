@@ -1,5 +1,10 @@
 name: SQL Deployment
 
+run-name: >
+  deploy
+  ${{ github.event_name == 'schedule' && (github.event.schedule == '0 2 * * 6' && 'destroy' || 'create') || github.event.inputs.operation }}
+  ${{ github.event.inputs.server != '' && github.event.inputs.server || 'all' }}
+
 on:
   push:
     branches: [ "main" ]
