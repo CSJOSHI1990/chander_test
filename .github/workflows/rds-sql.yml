@@ -1,13 +1,6 @@
 name: RDS Refresh
 
-run-name: >
-  deploy
-  ${{ github.event_name == 'schedule' && (github.event.schedule == '0 2 * * 6' && 'destroy' || 'create') || github.event.inputs.operation }}
-  ${{ github.event.inputs.server != '' && github.event.inputs.server || 'all' }}
-
 on:
-  push:
-    branches: [ "main" ]
   workflow_dispatch:
     inputs:
       operation:
@@ -15,20 +8,26 @@ on:
         required: true
         type: choice
         options:
-          - create
-          - destroy
-      server:
-        description: "Target server (leave empty for all)"
+          - upgrade
+          - delete
+      system_name:
+        description: "System or Datacenter"
         required: false
-        default: ""
+        type: choice
+        options:
+          - us01
+          - us02
+      force:
+        description: Force apply
+        type: boolean
+        default: false
   schedule:
-    # Friday 9 PM EST -> destroy
-    - cron: "0 2 * * 6"   # 2 AM UTC = 9 PM EST Friday
-    # Monday 1 AM EST -> create
-    - cron: "0 6 * * 1"   # 6 AM UTC = 1 AM EST Monday
-    # Test run at 3:00 PM IST daily
-    - cron: "30 9 * * *"
-
+    # us01
+    - cron: "0 2 * * 6"   # Friday 9:00 PM EST -> destroy(delete) us01
+    - cron: "0 6 * * 1"   # Monday 1:00 AM EST -> deploy(upgrade) us01
+    # us02
+    - cron: "0 3 * * 6"   # Friday 10:00 PM EST -> destroy(delete) us02
+    - cron: "0 4 * * 1"   # Sunday 11:00 PM EST -> deploy(upgrade) us02
 
 env:
   DEFAULT_SERVERS: '["US01SQL01","US01SQL03"]'
@@ -38,57 +37,30 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     outputs:
-      servers: ${{ steps.set-servers.outputs.servers }}
-      operation: ${{ steps.set-op.outputs.op }}
+      system: ${{ steps.set-vars.outputs.system }}
+      operation: ${{ steps.set-vars.outputs.operation }}
     steps:
-      - name: Validate server against environment
-        run: |
-          if [ -n "${{ github.event.inputs.server }}" ]; then
-            server_prefix="${{ github.event.inputs.server }}"
-            server_prefix="${server_prefix:0:4}"
-            env_prefix="${ENVIRONMENT:0:4}"
-            if [ "$server_prefix" != "$env_prefix" ]; then
-              echo "❌ Server - ${{ github.event.inputs.server }} is not supported for the $ENVIRONMENT environment"
-              exit 1
-            fi
-          fi
-
-      - name: Decide servers
-        id: set-servers
-        run: |
-          if [ "${{ github.event_name }}" == "schedule" ]; then
-            echo "servers=${DEFAULT_SERVERS}" >> $GITHUB_OUTPUT
-          else
-            if [ -z "${{ github.event.inputs.server }}" ]; then
-              echo "servers=${DEFAULT_SERVERS}" >> $GITHUB_OUTPUT
-            else
-              echo "servers=[\"${{ github.event.inputs.server }}\"]" >> $GITHUB_OUTPUT
-            fi
-          fi
-
       - name: Decide operation
-        id: set-op
+        id: set-vars
         run: |
           if [ "${{ github.event_name }}" == "schedule" ]; then
-            if [ "${{ github.event.schedule }}" == "0 2 * * 6" ]; then
-              echo "op=destroy" >> $GITHUB_OUTPUT
-            else
-              echo "op=create" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "op=${{ github.event.inputs.operation }}" >> $GITHUB_OUTPUT
+            case "${{ github.event.schedule }}" in
+              "0 2 * * 6")  echo "system=us06" >> $GITHUB_OUTPUT; echo "operation=delete" >> $GITHUB_OUTPUT ;;
+              "0 6 * * 1")  echo "system=us06" >> $GITHUB_OUTPUT; echo "operation=upgrade"  >> $GITHUB_OUTPUT ;;
+              "0 3 * * 6")  echo "system=us07" >> $GITHUB_OUTPUT; echo "operation=delete" >> $GITHUB_OUTPUT ;;
+              "0 4 * * 1")  echo "system=us07" >> $GITHUB_OUTPUT; echo "operation=upgrade"  >> $GITHUB_OUTPUT ;;
+            esac
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # normalize env to uppercase (since choices are lowercase)
+            echo "system=${{ github.event.inputs.system_name }}"; echo "operation=${{ github.event.inputs.operation }}" >> $GITHUB_OUTPUT
           fi
 
-  per-server:
+  deploy:
+    name: Deploy
+    permissions:
+      id-token: write
+      contents: read
     needs: setup
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        server: ${{ fromJson(needs.setup.outputs.servers) }}
-
-    steps:
-      - name: Print deployment command
-        if: ${{ github.event_name != 'push' }}   # ⛔ skip on push to main
-        run: |
-          echo "deploy ${{ needs.setup.outputs.operation }} SQL-${{ matrix.server }} -S $ENVIRONMENT"
+    if: ${{ github.event_name != 'push' }}   # ⛔ skip on push to main
+    run: |
+      echo "deploy ${{ needs.setup.outputs.operation }} -S ${{ needs.setup.outputs.system }}"
