@@ -1,4 +1,4 @@
-name: SQL Deployment
+name: RDS Refresh
 
 run-name: >
   deploy
@@ -44,7 +44,7 @@ jobs:
       - name: Validate server against environment
         run: |
           if [ -n "${{ github.event.inputs.server }}" ]; then
-            server_prefix="${{ github.event.inputs.server }}" 
+            server_prefix="${{ github.event.inputs.server }}"
             server_prefix="${server_prefix:0:4}"
             env_prefix="${ENVIRONMENT:0:4}"
             if [ "$server_prefix" != "$env_prefix" ]; then
@@ -52,7 +52,7 @@ jobs:
               exit 1
             fi
           fi
-          
+
       - name: Decide servers
         id: set-servers
         run: |
