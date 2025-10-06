@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       operation:
-        description: "Operation to perform (create|destroy)"
+        description: "Operation to perform (upgrade|delete)"
         required: false
         type: choice
         options:
@@ -23,11 +23,11 @@ on:
         default: false
   schedule:
     # us01
-    - cron: "0 2 * * 6"   # Friday 9:00 PM EST -> destroy(delete) us01
-    - cron: "0 6 * * 1"   # Monday 1:00 AM EST -> deploy(upgrade) us01
+    - cron: "0 2 * * 6"   # Friday 9:00 PM EST -> delete us01
+    - cron: "0 6 * * 1"   # Monday 1:00 AM EST -> upgrade us01
     # us02
-    - cron: "0 3 * * 6"   # Friday 10:00 PM EST -> destroy(delete) us02
-    - cron: "0 4 * * 1"   # Sunday 11:00 PM EST -> deploy(upgrade) us02
+    - cron: "0 3 * * 6"   # Friday 10:00 PM EST -> delete us02
+    - cron: "0 4 * * 1"   # Sunday 11:00 PM EST -> upgrade us02
 
 jobs:
   setup:
@@ -41,14 +41,14 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "schedule" ]; then
             case "${{ github.event.schedule }}" in
-              "0 2 * * 6")  echo "system=us01" >> $GITHUB_OUTPUT; echo "operation=delete" >> $GITHUB_OUTPUT;
-              "0 6 * * 1")  echo "system=us01" >> $GITHUB_OUTPUT; echo "operation=upgrade"  >> $GITHUB_OUTPUT;
-              "0 3 * * 6")  echo "system=us02" >> $GITHUB_OUTPUT; echo "operation=delete" >> $GITHUB_OUTPUT;
-              "0 4 * * 1")  echo "system=us02" >> $GITHUB_OUTPUT; echo "operation=upgrade"  >> $GITHUB_OUTPUT;
+              "0 2 * * 6")  echo "system=us01" >> $GITHUB_OUTPUT; echo "operation=delete"  >> $GITHUB_OUTPUT ;;
+              "0 6 * * 1")  echo "system=us01" >> $GITHUB_OUTPUT; echo "operation=upgrade" >> $GITHUB_OUTPUT ;;
+              "0 3 * * 6")  echo "system=us02" >> $GITHUB_OUTPUT; echo "operation=delete"  >> $GITHUB_OUTPUT ;;
+              "0 4 * * 1")  echo "system=us02" >> $GITHUB_OUTPUT; echo "operation=upgrade" >> $GITHUB_OUTPUT ;;
             esac
           elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            # normalize env to uppercase (since choices are lowercase)
-            echo "system=${{ github.event.inputs.system_name }}"; echo "operation=${{ github.event.inputs.operation }}" >> $GITHUB_OUTPUT;
+            echo "system=${{ github.event.inputs.system_name }}" >> $GITHUB_OUTPUT
+            echo "operation=${{ github.event.inputs.operation }}" >> $GITHUB_OUTPUT
           fi
 
   deploy:
