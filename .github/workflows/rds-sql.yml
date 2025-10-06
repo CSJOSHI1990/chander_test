@@ -57,6 +57,8 @@ jobs:
       id-token: write
       contents: read
     needs: setup
-    if: ${{ github.event_name != 'push' }}   # ⛔ skip on push to main
-    run: |
-      echo "deploy ${{ needs.setup.outputs.operation }} -S ${{ needs.setup.outputs.system }}"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print Command
+        run: |
+          echo "deploy ${{ needs.setup.outputs.operation }} -S ${{ needs.setup.outputs.system }}"
