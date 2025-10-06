@@ -29,8 +29,8 @@ on:
     - cron: "0 3 * * 6"   # Friday 10:00 PM EST -> delete us02
     - cron: "0 4 * * 1"   # Sunday 11:00 PM EST -> upgrade us02
     # us02
-    - cron: "20 12 * * 1"   # Friday 10:00 PM EST -> delete us02
-    - cron: "30 12 * * 1"   # Sunday 11:00 PM EST -> upgrade us02
+    - cron: "30 13 * * 1"   # Friday 8:20 PM EST -> delete us02
+    - cron: "35 13 * * 1"   # Sunday 8:30 PM EST -> upgrade us02
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -47,8 +47,8 @@ jobs:
               "0 6 * * 1")  echo "system=us01" >> $GITHUB_OUTPUT; echo "operation=upgrade" >> $GITHUB_OUTPUT ;;
               "0 3 * * 6")  echo "system=us02" >> $GITHUB_OUTPUT; echo "operation=delete"  >> $GITHUB_OUTPUT ;;
               "0 4 * * 1")  echo "system=us02" >> $GITHUB_OUTPUT; echo "operation=upgrade" >> $GITHUB_OUTPUT ;;
-              "20 12 * * 1")  echo "system=us02" >> $GITHUB_OUTPUT; echo "operation=delete"  >> $GITHUB_OUTPUT ;;
-              "30 12 * * 1")  echo "system=us02" >> $GITHUB_OUTPUT; echo "operation=upgrade"  >> $GITHUB_OUTPUT ;;
+              "30 13 * * 1")  echo "system=us02" >> $GITHUB_OUTPUT; echo "operation=delete"  >> $GITHUB_OUTPUT ;;
+              "35 13 * * 1")  echo "system=us02" >> $GITHUB_OUTPUT; echo "operation=upgrade"  >> $GITHUB_OUTPUT ;;
             esac
           elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "system=${{ github.event.inputs.system_name }}" >> $GITHUB_OUTPUT
