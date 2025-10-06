@@ -41,14 +41,14 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "schedule" ]; then
             case "${{ github.event.schedule }}" in
-              "0 2 * * 6")  echo "system=us01" >> $GITHUB_OUTPUT; echo "operation=delete" >> $GITHUB_OUTPUT ;;
-              "0 6 * * 1")  echo "system=us01" >> $GITHUB_OUTPUT; echo "operation=upgrade"  >> $GITHUB_OUTPUT ;;
-              "0 3 * * 6")  echo "system=us02" >> $GITHUB_OUTPUT; echo "operation=delete" >> $GITHUB_OUTPUT ;;
-              "0 4 * * 1")  echo "system=us02" >> $GITHUB_OUTPUT; echo "operation=upgrade"  >> $GITHUB_OUTPUT ;;
+              "0 2 * * 6")  echo "system=us01" >> $GITHUB_OUTPUT; echo "operation=delete" >> $GITHUB_OUTPUT;
+              "0 6 * * 1")  echo "system=us01" >> $GITHUB_OUTPUT; echo "operation=upgrade"  >> $GITHUB_OUTPUT;
+              "0 3 * * 6")  echo "system=us02" >> $GITHUB_OUTPUT; echo "operation=delete" >> $GITHUB_OUTPUT;
+              "0 4 * * 1")  echo "system=us02" >> $GITHUB_OUTPUT; echo "operation=upgrade"  >> $GITHUB_OUTPUT;
             esac
           elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             # normalize env to uppercase (since choices are lowercase)
-            echo "system=${{ github.event.inputs.system_name }}"; echo "operation=${{ github.event.inputs.operation }}" >> $GITHUB_OUTPUT ;;
+            echo "system=${{ github.event.inputs.system_name }}"; echo "operation=${{ github.event.inputs.operation }}" >> $GITHUB_OUTPUT;
           fi
 
   deploy:
