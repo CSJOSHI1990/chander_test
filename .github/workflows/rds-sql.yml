@@ -5,7 +5,7 @@ on:
     inputs:
       operation:
         description: "Operation to perform (create|destroy)"
-        required: true
+        required: false
         type: choice
         options:
           - upgrade
@@ -48,7 +48,7 @@ jobs:
             esac
           elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             # normalize env to uppercase (since choices are lowercase)
-            echo "system=${{ github.event.inputs.system_name }}"; echo "operation=${{ github.event.inputs.operation }}" >> $GITHUB_OUTPUT
+            echo "system=${{ github.event.inputs.system_name }}"; echo "operation=${{ github.event.inputs.operation }}" >> $GITHUB_OUTPUT ;;
           fi
 
   deploy:
@@ -61,4 +61,4 @@ jobs:
     steps:
       - name: Print Command
         run: |
-          echo "deploy ${{ needs.setup.outputs.operation }} -S ${{ needs.setup.outputs.system }}"
+          echo "deploy ${{ needs.setup.outputs.operation }} -S ${{ needs.setup.outputs.system }} -Force ${{ github.event.inputs.force }}"
