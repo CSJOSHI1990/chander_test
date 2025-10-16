@@ -67,4 +67,4 @@ jobs:
         run: |
           echo "deploy ${{ needs.setup.outputs.operation }} -S ${{ needs.setup.outputs.system }} -Force ${{ github.event.inputs.force }}"
 
-run-name: RDS Refresh-${{ needs.setup.outputs.system }}-${{ needs.setup.outputs.operation }}
+run-name: RDS Refresh-${{ setup.outputs.system }}-${{ setup.outputs.operation }}
