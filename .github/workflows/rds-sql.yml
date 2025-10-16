@@ -29,7 +29,7 @@ on:
     - cron: "0 3 * * 6"   # Friday 10:00 PM EST -> delete us02
     - cron: "0 4 * * 1"   # Sunday 11:00 PM EST -> upgrade us02
     # us02
-    - cron: "25 5 * * 4"   # Friday 8:20 PM EST -> delete us02
+    - cron: "26 5 * * 4"   # Friday 8:20 PM EST -> delete us02
     - cron: "28 5 * * 4"   # Sunday 8:30 PM EST -> upgrade us02
 jobs:
   setup:
@@ -47,7 +47,7 @@ jobs:
               "0 6 * * 1")  echo "system=us01" >> $GITHUB_OUTPUT; echo "operation=upgrade" >> $GITHUB_OUTPUT ;;
               "0 3 * * 6")  echo "system=us02" >> $GITHUB_OUTPUT; echo "operation=delete"  >> $GITHUB_OUTPUT ;;
               "0 4 * * 1")  echo "system=us02" >> $GITHUB_OUTPUT; echo "operation=upgrade" >> $GITHUB_OUTPUT ;;
-              "25 5 * * 4")  echo "system=us02" >> $GITHUB_OUTPUT; echo "operation=delete"  >> $GITHUB_OUTPUT ;;
+              "26 5 * * 4")  echo "system=us02" >> $GITHUB_OUTPUT; echo "operation=delete"  >> $GITHUB_OUTPUT ;;
               "28 5 * * 4")  echo "system=us02" >> $GITHUB_OUTPUT; echo "operation=upgrade"  >> $GITHUB_OUTPUT ;;
             esac
           elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
@@ -56,8 +56,7 @@ jobs:
           fi
 
   deploy:
-    name: Deploy
-    run-name: RDS Refresh-${{ setup.outputs.system }}-${{ setup.outputs.operation }}
+    name: RDS Refresh-${{ needs.setup.outputs.system }}-${{ needs.setup.outputs.operation }}
     permissions:
       id-token: write
       contents: read
