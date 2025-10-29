@@ -4,10 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       operation:
-        description: "Operation to perform (upgrade|delete)"
-        required: false
+        description: "Operation to perform (create|destroy)"
+        required: true
         type: choice
         options:
+          - plan
+          - plan-delete
           - upgrade
           - delete
       system_name:
@@ -15,12 +17,19 @@ on:
         required: false
         type: choice
         options:
-          - us01
-          - us02
+          - us06
+          - us07
       force:
         description: Force apply
         type: boolean
-        default: false
+        default: true
+      job_tag:
+        description: "Job Tag to run"
+        required: false
+        type: choice
+        options:
+          - refreshable # Refresh RDS instances using final snapshot
+          - renewal # Fresh New RDS instance created without using any snapshot
   schedule:
     # us01
     - cron: "0 2 * * 6"   # Friday 9:00 PM EST -> delete us01
