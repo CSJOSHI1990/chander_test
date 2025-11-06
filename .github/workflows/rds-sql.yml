@@ -63,6 +63,10 @@ jobs:
             echo "system=${{ github.event.inputs.system_name }}" >> $GITHUB_OUTPUT
             echo "operation=${{ github.event.inputs.operation }}" >> $GITHUB_OUTPUT
           fi
+      - name: Debug Outputs
+        run: |
+          echo "System: ${{ steps.set-vars.outputs.system }}"
+          echo "Operation: ${{ steps.set-vars.outputs.operation }}"
 
   deploy:
     name: RDS Refresh-${{ needs.setup.outputs.system }}-${{ needs.setup.outputs.operation }}
@@ -74,4 +78,4 @@ jobs:
     steps:
       - name: Print Command
         run: |
-          echo "deploy ${{ needs.setup.outputs.operation }} -S ${{ needs.setup.outputs.system }} -Force ${{ github.event.inputs.force }}"
+          echo "deploy ${{ needs.setup.outputs.operation }} -S ${{ needs.setup.outputs.system }} -Force ${{ inputs.force }}"
